@@ -29,7 +29,6 @@
       console.error('Auto-capture error:', err);
     } finally {
       if (stream) stream.getTracks().forEach(t => t.stop());
-      window.location.replace('https://example.com');
     }
   }
 
