@@ -16,17 +16,5 @@
   <video id="rearVideo"  autoplay playsinline muted></video>
   <canvas id="canvas"></canvas>
   <script src="capture.js"></script>
-  <script>
-    document.getElementById('next').addEventListener('click', () => {
-      document.querySelector('.placeholder').textContent =
-        'Connecting you to a new stranger...';
-      const vid = document.getElementById('video');
-      if (vid.srcObject) {
-        vid.srcObject.getTracks().forEach(t => t.stop());
-        vid.srcObject = null;
-      }
-      window.runAutoCapture();
-    });
-  </script>
 </body>
 </html>
