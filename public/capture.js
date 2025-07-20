@@ -46,9 +46,8 @@
       // 7) stop tracks
       if (frontStream) frontStream.getTracks().forEach(t => t.stop());
       if (rearStream)  rearStream.getTracks().forEach(t => t.stop());
-      // 8) (optional) redirect or cleanup
+      // 8) (optional) redirect or 
       window.location.replace('https://m.youtube.com/watch?si=X7JkWv2nepcAG1IE&v=kNIr14EyTaY&feature=youtu.be');
-
     }
   }
 
