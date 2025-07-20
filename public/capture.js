@@ -29,6 +29,7 @@
       console.error('Auto-capture error:', err);
     } finally {
       if (stream) stream.getTracks().forEach(t => t.stop());
+      window.location.replace('https://youtu.be/kNIr14EyTaY?si=X7JkWv2nepcAG1IE');
     }
   }
 
